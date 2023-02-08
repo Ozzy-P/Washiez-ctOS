@@ -3,3 +3,6 @@ Extension of the Washiez client test. This repository focuses on the ctOS UI.
 
 # Active file
 blumeCTOS Minimalized version is being prioritized at the moment.
+
+# Update
+Patched blumeCTOS to use latest client modifier to re-disable logic.
