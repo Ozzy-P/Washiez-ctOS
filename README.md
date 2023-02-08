@@ -6,5 +6,6 @@ blumeCTOS Minimalized version is being prioritized at the moment.
 
 # Update
 Patched blumeCTOS to use latest client modifier to re-disable logic.
-+ (!) + Other versions may trigger client callbacks that are not hooked.
++ (!) 
+ + Other versions may trigger client callbacks that are not hooked.
 + These versions will not cause stability issues but may not perform as expected.
