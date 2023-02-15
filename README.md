@@ -12,3 +12,4 @@ Patched blumeCTOS to use latest client modifier to re-disable logic.
 
 # Bugs
 GUI will continue regardless of images in preloading state.
+Low FPS (>60) will make load progress slower.
