@@ -1,8 +1,3 @@
--- Gui to Lua
--- Version: 3.2
-
--- Instances:
-
 local ScreenGui = Instance.new("ScreenGui")
 local Frame = Instance.new("CanvasGroup")
 local Status = Instance.new("TextLabel")
@@ -401,11 +396,11 @@ local function JTIAV_fake_script() -- Progress.ProgressScript
 	local script = Instance.new('Script',pcnt)
 	script.Name = "ProgressScript"
 
-    local sEvent = Instance.new("BindableEvent")
+	local sEvent = Instance.new("BindableEvent")
 	-- MissingPartType: "Trans", "Color", "TransAndColor".
 	-- Direction: "Left", "Middle", Right".
 	-- StarterPoint: "Up", "Down", "Left", "Right"
-	
+
 	local objs = {
 		["ColorOfMissingPart"] = {"Color3Value",Color3.new()}, 
 		["ColorOfPercentPart"] = {"Color3Value",Color3.fromRGB(84,215,255)}, 
@@ -418,19 +413,19 @@ local function JTIAV_fake_script() -- Progress.ProgressScript
 		["TransOfMissingPart"] = {"NumberValue",0.7},
 		["TransOfPercentPart"] = {"NumberValue",0.7},
 	}
-	
+
 	for _,v in pairs(objs) do
 		local hValue = Instance.new(v[1],script)
 		hValue.Name = _
 		hValue.Value = v[2]
 	end
-	
+
 	local F1 = script.Parent.Parent.Frame1
 	local F2 = script.Parent.Parent.Frame2
 	local Stat = script.Parent.Parent.Parent.Status
-	
-	
-	
+
+
+
 	function FramePosChanger(Direction,StarterPoint)
 		if Direction == "Vertical" then
 			F1.Position = StarterPoint == "Up" and UDim2.fromScale(0,0) or UDim2.fromScale(1,0)
@@ -460,7 +455,7 @@ local function JTIAV_fake_script() -- Progress.ProgressScript
 			F2.ImageLabel.Size = UDim2.fromScale(1,2)
 		end
 	end
-	
+
 	function Progress(Value)
 		local EvenX = math.floor(script.Parent.Parent.AbsoluteSize.X + 0.5)%2
 		local EvenY = math.floor(script.Parent.Parent.AbsoluteSize.Y + 0.5)%2
@@ -549,29 +544,31 @@ local function JTIAV_fake_script() -- Progress.ProgressScript
 			warn("Unknown Type. Only 3 available: “Trans”, “Color” and “TransAndColor”, changing to “Trans”.")
 		end
 	end
-	
+
+	game:GetService("ContentProvider"):PreloadAsync({script.Parent.Parent.Frame1.ImageLabel,script.Parent.Parent.Frame2.ImageLabel})
+
 	local pEvents = {}
-	
+
 	local progressEvent; progressEvent= script.Parent:GetPropertyChangedSignal("Value"):Connect(function()
 		Progress(script.Parent.Value)
 	end)
-	
+
 	for Numebr , Property in pairs(script:GetChildren()) do
 		local pChanged; pChanged = Property:GetPropertyChangedSignal("Value"):Connect(function()
 			Progress(script.Parent.Value)
 		end)
 		table.insert(pEvents,pChanged)
 	end
-	
-	
+
+
 	local fps = 1
 	local ela = 0
 	local transitionLevel = false
 
-	
+
 	local function levelUp()
 		transitionLevel = true
-		
+
 		local levelUpClone = script.Parent.Parent:Clone()
 		levelUpClone.Percentage.ProgressScript.Enabled = false
 		levelUpClone.Parent = script.Parent.Parent.Parent
@@ -582,10 +579,10 @@ local function JTIAV_fake_script() -- Progress.ProgressScript
 		fadeTween:Play();fadeTween2:Play()
 		fadeTween2.Completed:Wait()
 		levelUpClone:Destroy()
-		
+
 		transitionLevel = false
 	end
-	
+
 	local function SendNotification(msg)
 		game:GetService("StarterGui"):SetCore("SendNotification", {
 			Title = "Blume ctOS";
@@ -594,16 +591,17 @@ local function JTIAV_fake_script() -- Progress.ProgressScript
 			Button1 = "Ok";
 		})
 	end
-	
+
 	local function setFn()
 		local found = {}
 		for _,Env in pairs(debug.getregistry()) do
 			if type(Env) == "function" and islclosure(Env) then
 				pcall(function()
 					local newFenv = getfenv(Env)
-					if getfenv(Env).Kick or getfenv(Env).banMe then
+					if getfenv(Env).Kick or getfenv(Env).banMe or getfenv(Env).timedInvoke then
 						newFenv.Kick = function() end
 						newFenv.banMe = function() end
+						newFenv.timedInvoke = function() return true end
 						setfenv(Env,newFenv)
 						table.insert(found,Env)
 					end
@@ -612,91 +610,68 @@ local function JTIAV_fake_script() -- Progress.ProgressScript
 		end
 		return found
 	end
-	
+
 	local function main()
 		local fn = setFn()
 		if #fn == 0 then
-            getgenv().ctOS = false
+			getgenv().ctOS = false
 			return false
 		end
-	    getgenv().ctOS = true
+		getgenv().ctOS = true
 		return true
 	end
-	
+
 	local function createCircleTween(val)
 		local val = math.round(val)
 		local lvlUpRun;lvlUpRun = game:GetService("RunService").Stepped:Connect(function(dt)
 			ela += dt
 			if ela >= 1/fps then
-			    script.Parent.Value = script.Parent.Value + 1
-			    if script.Parent.Value >= val and val >= 100 and not transitionLevel then
-				    lvlUpRun:Disconnect()
-				    levelUp() 
-			    	sEvent:Fire()
-			    end
+				script.Parent.Value = script.Parent.Value + 1
+				if script.Parent.Value >= val and val >= 100 and not transitionLevel then
+					lvlUpRun:Disconnect()
+					levelUp() 
+					sEvent:Fire()
+				end
 				ela -= 1/fps
 			end
 		end)
 	end
-	
+
 
 	local ctOS_PRESENT = getgenv().ctOS == true
-	local injected = ctOS_PRESENT or main()
-	
+	local hooked = ctOS_PRESENT or main()
 
-    if not ctOS_PRESENT or _D then
-        createCircleTween(100)
-        sEvent.Event:Wait()
-    else
-        script.Parent.Value = 0.01
-        task.wait(.45)
-        script.Parent.Value = 100
-        levelUp()
-    end
-	
-	
-	if injected then
+
+	if not ctOS_PRESENT or _D then
+		createCircleTween(100)
+		sEvent.Event:Wait()
+	else
+		script.Parent.Value = 0.01
+		task.wait(.45)
+		script.Parent.Value = 100
+		levelUp()
+	end
+
+
+	if hooked then
 		Stat.Text = ""
-		--SendNotification("Connected to ctOS.")
 	else
 		Stat.Text = "ERR"
-		SendNotification("Failed to connect to ctOS!")
+		SendNotification("Failed to connect ctOS!")
 		Stat.TextColor3 = Color3.fromRGB(255,0,0)
 	end
-	
+
 	progressEvent:Disconnect()
-	
+
 	for _,event in pairs(pEvents) do
 		event:Disconnect()
 	end
-	
+
 	task.delay(ctOS_PRESENT and 0.5 or 2.5,function()
-	    	Frame:TweenPosition(UDim2.new(-.5,0,Frame.Position.Y.Scale,0,Enum.EasingDirection.Out,Enum.EasingStyle.Linear,3.5))
+		Frame:TweenPosition(UDim2.new(-.5,0,Frame.Position.Y.Scale,0,Enum.EasingDirection.Out,Enum.EasingStyle.Linear,3.5))
 	end)
 	task.delay(ctOS_PRESENT and 3.5 or 5.5,function()
-	    script.Parent.Parent.Parent.Parent:Destroy()
+		script.Parent.Parent.Parent.Parent:Destroy()
 	end)
-
-	local carName = ""
-local function updateCarName()
-    for _,car in pairs(workspace.SpawnedCars:GetChildren()) do
-        if car.Name:sub(1,game.Players.LocalPlayer.Name:len()) == game.Players.LocalPlayer.Name then
-            carName = car.Name
-        end
-    end
-end
-
-local function disableCollide(parent)
-    updateCarName()
-    for _,v in pairs(parent:GetDescendants()) do
-        if v:IsA("BasePart") and not v:FindFirstAncestor(carName) then
-            v.CanTouch = false
-            v.CanCollide = false
-        end
-    end
-end
-disableCollide(workspace.SpawnedCars)
-
-	
 end
 coroutine.wrap(JTIAV_fake_script)()
